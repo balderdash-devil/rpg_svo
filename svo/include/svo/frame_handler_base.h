@@ -85,6 +85,7 @@ public:
   /// Get the number of feature observations of the last frame.
   size_t lastNumObservations() const { return num_obs_last_; }
 
+  TrackingQuality tracking_quality() { return tracking_quality_;}
 protected:
   Stage stage_;                 //!< Current stage of the algorithm.
   bool set_reset_;              //!< Flag that the user can set. Will reset the system before the next iteration.
