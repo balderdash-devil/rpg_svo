@@ -147,4 +147,7 @@ ADD_EXECUTABLE(test_sparse_img_align test/test_sparse_img_align.cpp)
 TARGET_LINK_LIBRARIES(test_sparse_img_align svo)
 
 ADD_EXECUTABLE(test_pose_optimizer test/test_pose_optimizer.cpp)
-TARGET_LINK_LIBRARIES(test_pose_optimizer svo) 
+TARGET_LINK_LIBRARIES(test_pose_optimizer svo)
+
+ADD_EXECUTABLE(natesh01 test/natesh01.cpp)
+TARGET_LINK_LIBRARIES(natesh01 svo) 
