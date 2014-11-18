@@ -113,6 +113,35 @@ void FastDetector::detect(
   resetGrid();
 }
 
+//@Natesh Srinivasan : A Hack to select all pixels
+AllDetector::AllDetector(
+    const int img_width,
+    const int img_height,
+    const int cell_size,
+    const int n_pyr_levels) :
+        AbstractDetector(img_width, img_height, cell_size, n_pyr_levels)
+{}
+
+void AllDetector::detect(
+    Frame* frame,
+    const ImgPyr& img_pyr,
+    const double detection_threshold,
+    Features& fts)
+{
+
+  int width = img_pyr[0].cols;
+  int height = img_pyr[0].rows;
+
+ int border=8;
+ for(int row = border; row < height-border; row++)
+  for(int col = border; col < width-border; col++) {
+
+  fts.push_back(new Feature(frame, Vector2d(col, row), 0));
+
+ };
+
+  resetGrid();
+}
 } // namespace feature_detection
 } // namespace svo
 

@@ -101,6 +101,25 @@ public:
       Features& fts);
 };
 
+/// Allpixel hack by Natesh Srinivasan
+class AllDetector : public AbstractDetector
+{
+public:
+  AllDetector(
+    const int img_width,
+    const int img_height,
+    const int cell_size,
+    const int n_pyr_levels);
+
+  virtual ~AllDetector(){};
+
+  virtual void detect(
+    Frame* frame,
+    const ImgPyr& img_pyr,
+    const double detection_threshold,
+    Features& fts);
+};
+
 } // namespace feature_detection
 } // namespace svo
 
