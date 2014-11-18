@@ -1,3 +1,6 @@
 grid_size: 30
 max_n_kfs: 10
 loba_num_iter: 0
+max_fts: 300
+quality_max_drop_fts: 500
+accept_console_user_input: false
