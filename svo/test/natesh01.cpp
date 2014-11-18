@@ -1,5 +1,18 @@
-// Author Natesh Srinivasan
-// copied over from test_depth_filter
+// This file is part of SVO - Semi-direct Visual Odometry.
+//
+// Copyright (C) 2014 Christian Forster <forster at ifi dot uzh dot ch>
+// (Robotics and Perception Group, University of Zurich, Switzerland).
+//
+// SVO is free software: you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation, either version 3 of the License, or any later version.
+//
+// SVO is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <list>
 #include <vector>
@@ -53,7 +66,7 @@ class DepthFilterTest {
 
 DepthFilterTest::DepthFilterTest() :
     n_converged_seeds_(0),
-    cam_(new vk::PinholeCamera(752, 480, 315.5, 315.5, 376.0, 240.0)),
+    cam_(new vk::PinholeCamera(1280, 1024, 705.247873, 701.723622, 613.291494, 442.459656, -0.284518, 0.059577, 0.001864 ,0.001080)),
     depth_filter_(NULL)
 {
   errors_.reserve(1000);
@@ -67,8 +80,9 @@ DepthFilterTest::~DepthFilterTest()
 void DepthFilterTest::depthFilterCb(svo::Point* point, double depth_sigma2)
 {
   double depth = (frame_ref_->pos() - point->pos_).norm();
-  double error = fabs(depth - depth_ref_.at<float>(point->obs_.front()->px[1],
-                                                   point->obs_.front()->px[0]));
+//  double error = fabs(depth - depth_ref_.at<float>(point->obs_.front()->px[1],
+//                                                   point->obs_.front()->px[0]));
+  double error = 0.0; //becasue we do not have ground truth depth
   results_.push_back(ConvergedSeed(
       point->obs_.front()->px[0], point->obs_.front()->px[1], depth, error));
   errors_.push_back(error);
@@ -93,7 +107,7 @@ void DepthFilterTest::testReconstruction(
   std::list<size_t> n_converged_per_iteration;
 
   svo::feature_detection::DetectorPtr feature_detector(
-      new svo::feature_detection::FastDetector(
+      new svo::feature_detection::AllDetector(
           cam_->width(), cam_->height(), svo::Config::gridSize(), svo::Config::nPyrLevels()));
   svo::DepthFilter::callback_t depth_filter_cb = boost::bind(&DepthFilterTest::depthFilterCb, this, _1, _2);
   depth_filter_ = new svo::DepthFilter(feature_detector, depth_filter_cb);
@@ -112,8 +126,8 @@ void DepthFilterTest::testReconstruction(
       // create reference frame and load ground truth depthmap
       frame_ref_ = boost::make_shared<svo::Frame>(cam_, img, 0.0);
       frame_ref_->T_f_w_ = T_w_f.inverse();
-      depth_filter_->addKeyframe(frame_ref_, 2, 0.5);
-      vk::blender_utils::loadBlenderDepthmap(dataset_dir+"/depth/" + (*it).image_name_ + "_0.depth", *cam_, depth_ref_);
+      depth_filter_->addKeyframe(frame_ref_, 1, 0.5); // changed depth to 1m and commented out the next line
+//      vk::blender_utils::loadBlenderDepthmap(dataset_dir+"/depth/" + (*it).image_name_ + "_0.depth", *cam_, depth_ref_);
       continue;
     }
 
@@ -144,14 +158,14 @@ void DepthFilterTest::testReconstruction(
 
   // trace error
   std::string trace_dir(svo::test_utils::getTraceDir());
-  std::string trace_name(trace_dir + "/depth_filter_" + experiment_name + ".txt");
+  std::string trace_name(trace_dir + "/home/nsrinivasan7/Desktop/depth_filter_" + experiment_name + ".txt");
   std::ofstream ofs(trace_name.c_str());
   for(std::list<ConvergedSeed>::iterator i=results_.begin(); i!=results_.end(); ++i)
     ofs << i->x_ << ", " << i->y_ << ", " << fabs(i->error_) << std::endl;
   ofs.close();
 
   // trace convergence rate
-  trace_name = trace_dir + "/depth_filter_" + experiment_name + "_convergence.txt";
+  trace_name = /*trace_dir +*/ "/home/nsrinivasan7/Desktop/depth_filter_" + experiment_name + "_convergence.txt";
   ofs.open(trace_name.c_str());
   for(std::list<size_t>::iterator it=n_converged_per_iteration.begin();
       it!=n_converged_per_iteration.end(); ++it)
@@ -159,7 +173,8 @@ void DepthFilterTest::testReconstruction(
   ofs.close();
 
   // write ply file for pointcloud visualization in Meshlab
-  trace_name = trace_dir + "/depth_filter_" + experiment_name + ".ply";
+  trace_name = /*trace_dir +*/ "/home/nsrinivasan7/Desktop/depth_filter_" + experiment_name + ".ply";
+  std::cout << "Trace Name " << trace_name << std::endl;
   ofs.open(trace_name.c_str());
   ofs << "ply" << std::endl
       << "format ascii 1.0" << std::endl
@@ -186,8 +201,8 @@ void DepthFilterTest::testReconstruction(
 int main(int argc, char** argv)
 {
   DepthFilterTest test;
-  std::string dataset_dir(svo::test_utils::getDatasetDir() + "/sin2_tex2_h1_v8_d");
-  std::string experiment_name("sin2_tex2_h1_v8_d");
+  std::string dataset_dir(svo::test_utils::getDatasetDir() + "/labdesk");
+  std::string experiment_name("labdesk");
   test.testReconstruction(dataset_dir, experiment_name);
   return 0;
 }
