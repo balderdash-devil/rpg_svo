@@ -104,8 +104,12 @@ LIST(APPEND SOURCEFILES
   src/feature_alignment.cpp
   src/feature_detection.cpp
   src/depth_filter.cpp
+
   src/config.cpp
-  src/sparse_img_align.cpp)
+  src/sparse_img_align.cpp
+  )
+
+file(GLOB HEADERFILES "include/svo/*.h")
 
 # Add g2o if available
 IF(HAVE_G2O)
@@ -122,7 +126,7 @@ IF(HAVE_G2O)
 ENDIF(HAVE_G2O)
 
 # Create svo library
-ADD_LIBRARY(svo SHARED ${SOURCEFILES})
+ADD_LIBRARY(svo SHARED ${SOURCEFILES} ${HEADERFILES})
 TARGET_LINK_LIBRARIES(svo ${LINK_LIBS})
 
 ################################################################################
