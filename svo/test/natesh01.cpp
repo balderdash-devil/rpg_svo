@@ -1,18 +1,5 @@
-// This file is part of SVO - Semi-direct Visual Odometry.
-//
-// Copyright (C) 2014 Christian Forster <forster at ifi dot uzh dot ch>
-// (Robotics and Perception Group, University of Zurich, Switzerland).
-//
-// SVO is free software: you can redistribute it and/or modify it under the
-// terms of the GNU General Public License as published by the Free Software
-// Foundation, either version 3 of the License, or any later version.
-//
-// SVO is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// copied from test_depth_filter
+// creates dense depth maps
 
 #include <list>
 #include <vector>
@@ -62,12 +49,14 @@ class DepthFilterTest {
   svo::FramePtr frame_ref_;
   svo::FramePtr frame_cur_;
   cv::Mat depth_ref_;
+  std::string result_dir_;
 };
 
 DepthFilterTest::DepthFilterTest() :
     n_converged_seeds_(0),
     cam_(new vk::PinholeCamera(1280, 1024, 705.247873, 701.723622, 613.291494, 442.459656, -0.284518, 0.059577, 0.001864 ,0.001080)),
-    depth_filter_(NULL)
+    depth_filter_(NULL),
+    result_dir_("/home/nsrinivasan7/data/labdesk/")
 {
   errors_.reserve(1000);
 }
@@ -157,15 +146,14 @@ void DepthFilterTest::testReconstruction(
   }
 
   // trace error
-  std::string trace_dir(svo::test_utils::getTraceDir());
-  std::string trace_name(trace_dir + "/home/nsrinivasan7/Desktop/depth_filter_" + experiment_name + ".txt");
+  std::string trace_name(result_dir_ + "/depth_filter_" + experiment_name + ".txt");
   std::ofstream ofs(trace_name.c_str());
   for(std::list<ConvergedSeed>::iterator i=results_.begin(); i!=results_.end(); ++i)
     ofs << i->x_ << ", " << i->y_ << ", " << fabs(i->error_) << std::endl;
   ofs.close();
 
   // trace convergence rate
-  trace_name = /*trace_dir +*/ "/home/nsrinivasan7/Desktop/depth_filter_" + experiment_name + "_convergence.txt";
+  trace_name = result_dir_ +  "/depth_filter_" + experiment_name + "_convergence.txt";
   ofs.open(trace_name.c_str());
   for(std::list<size_t>::iterator it=n_converged_per_iteration.begin();
       it!=n_converged_per_iteration.end(); ++it)
@@ -173,7 +161,7 @@ void DepthFilterTest::testReconstruction(
   ofs.close();
 
   // write ply file for pointcloud visualization in Meshlab
-  trace_name = /*trace_dir +*/ "/home/nsrinivasan7/Desktop/depth_filter_" + experiment_name + ".ply";
+  trace_name = result_dir_ + "/depth_filter_" + experiment_name + ".ply";
   std::cout << "Trace Name " << trace_name << std::endl;
   ofs.open(trace_name.c_str());
   ofs << "ply" << std::endl
@@ -182,17 +170,18 @@ void DepthFilterTest::testReconstruction(
       << "property float x" << std::endl
       << "property float y" << std::endl
       << "property float z" << std::endl
-      << "property uchar blue" << std::endl
-      << "property uchar green" << std::endl
-      << "property uchar red" << std::endl
+      << "property float intensity" << std::endl
+      //<< "property uchar green" << std::endl
+      //<< "property uchar red" << std::endl
       << "end_header" << std::endl;
 
   for(std::list<ConvergedSeed>::iterator i=results_.begin(); i!=results_.end(); ++i)
   {
-    cv::Vec3b c = frame_ref_->img_pyr_[0].at<cv::Vec3b>(i->y_, i->x_);
+    unsigned char c = frame_ref_->img_pyr_[0].at<unsigned char>(i->y_, i->x_);
     Eigen::Vector3d p = cam_->cam2world(i->x_, i->y_)*i->depth_;
     ofs << p[0] << " " << p[1] << " " << p[2] << " "
-        << (int) c[0] << " " << (int) c[1] << " " << (int) c[2] << std::endl;
+        //<< (int) c[0] << " " << (int) c[1] << " " << (int) c[2] << std::endl;
+                   << static_cast<float>(c)/255.0 << std::endl;
   }
 }
 
