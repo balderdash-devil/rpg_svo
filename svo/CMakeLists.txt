@@ -155,3 +155,6 @@ TARGET_LINK_LIBRARIES(test_pose_optimizer svo)
 
 ADD_EXECUTABLE(natesh01 test/natesh01.cpp)
 TARGET_LINK_LIBRARIES(natesh01 svo) 
+
+ADD_EXECUTABLE(natesh02 test/natesh02.cpp)
+TARGET_LINK_LIBRARIES(natesh02 svo)
