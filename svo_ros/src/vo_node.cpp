@@ -19,6 +19,7 @@
 #include <svo/frame_handler_mono.h>
 #include <svo/map.h>
 #include <svo/config.h>
+#include <svo/frame.h>
 #include <svo_ros/visualizer.h>
 #include <vikit/params_helper.h>
 #include <sensor_msgs/Image.h>
@@ -35,7 +36,12 @@
 #include <vikit/camera_loader.h>
 #include <vikit/user_input_thread.h>
 
+#include <stdlib.h>
+
 namespace svo {
+
+//natesh's file writing functions
+int cntr = 0;
 
 /// SVO Interface
 class VoNode
@@ -55,6 +61,7 @@ public:
   void imgCb(const sensor_msgs::ImageConstPtr& msg);
   void processUserActions();
   void remoteKeyCb(const std_msgs::StringConstPtr& key_input);
+  void resetfiles();
 };
 
 VoNode::VoNode() :
@@ -107,6 +114,33 @@ void VoNode::imgCb(const sensor_msgs::ImageConstPtr& msg)
   vo_->addImage(img, msg->header.stamp.toSec());
   visualizer_.publishMinimal(img, vo_->lastFrame(), *vo_, msg->header.stamp.toSec());
 
+  std::fstream filehandler; // file handler for trajectory
+  filehandler.open("/home/nsrinivasan7/data/live/trajectory.txt",std::fstream::out | std::fstream::app);
+
+  std::string imagefolder = "/home/nsrinivasan7/data/live/img/";
+
+
+  if(vo_->lastFrame() != nullptr)
+  {
+      if (vo_->tracking_quality() == svo::FrameHandlerMono::TRACKING_BAD || vo_->tracking_quality() == svo::FrameHandlerMono::TRACKING_INSUFFICIENT)
+          resetfiles();
+      else {
+      char imagename[50];
+      sprintf(imagename,"frame_%.6d",cntr);
+      char line[512];
+      Eigen::Vector3d trans = vo_->lastFrame()->T_f_w_.inverse().translation();
+      Eigen::Quaterniond quat = vo_->lastFrame()->T_f_w_.inverse().so3().unit_quaternion();
+      sprintf(line,"%1.6f frame_%.6d %1.4f %1.4f %1.4f %1.4f %1.4f %1.4f %1.4f \n", (float)cntr, cntr, trans(0), trans(1), trans(2),quat.x(), quat.y(), quat.z(), quat.w() );
+//      filehandler << 0.0 << " " << string(imagename) <<
+//                     vo_->lastFrame()->T_f_w_.inverse().translation().transpose() << vo_->lastFrame()->T_f_w_.inverse().so3().unit_quaternion().x() << " "
+//                     << vo_->lastFrame()->T_f_w_.inverse().so3().unit_quaternion().y() << " " << vo_->lastFrame()->T_f_w_.inverse().so3().unit_quaternion().z() << " "
+//                     << vo_->lastFrame()->T_f_w_.inverse().so3().unit_quaternion().w() << "\n";
+      filehandler << line;
+      cv::imwrite(string(string(imagefolder+std::string(imagename)) + "_0.png"),vo_->lastFrame()->img() );
+      cntr++;
+      }
+  }
+
   if(publish_markers_ && vo_->stage() != FrameHandlerBase::STAGE_PAUSED)
     visualizer_.visualizeMarkers(vo_->lastFrame(), vo_->coreKeyframes(), vo_->map());
 
@@ -138,9 +172,11 @@ void VoNode::processUserActions()
     case 'r':
       vo_->reset();
       printf("SVO user input: RESET\n");
+      resetfiles();
       break;
     case 's':
       vo_->start();
+      resetfiles();
       printf("SVO user input: START\n");
       break;
     default: ;
@@ -152,14 +188,30 @@ void VoNode::remoteKeyCb(const std_msgs::StringConstPtr& key_input)
   remote_input_ = key_input->data;
 }
 
+//*****************************************************************//
+void VoNode::resetfiles()
+{
+    cntr = 0;
+    if( system("rm -rf /home/nsrinivasan7/data/live/*") == -1 ||
+            system("mkdir /home/nsrinivasan7/data/live/img") == -1)
+    {
+        perror("Could Not Execute System Commands \n");
+        exit(0);
+    }
+
+}
+//*****************************************************************//
+
 } // namespace svo
 
 int main(int argc, char **argv)
 {
+
   ros::init(argc, argv, "svo");
   ros::NodeHandle nh;
   std::cout << "create vo_node" << std::endl;
   svo::VoNode vo_node;
+  vo_node.resetfiles();
 
   // subscribe to cam msgs
   std::string cam_topic(vk::getParam<std::string>("svo/cam_topic", "camera/image_raw"));
