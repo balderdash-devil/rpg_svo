@@ -158,3 +158,6 @@ TARGET_LINK_LIBRARIES(natesh01 svo)
 
 ADD_EXECUTABLE(natesh02 test/natesh02.cpp)
 TARGET_LINK_LIBRARIES(natesh02 svo)
+
+ADD_EXECUTABLE(natesh03 test/natesh03.cpp)
+TARGET_LINK_LIBRARIES(natesh03 svo)
